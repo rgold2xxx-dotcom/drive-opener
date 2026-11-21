@@ -34,17 +34,15 @@ Web版の Google ドライブで開いているフォルダやファイルを、
 
 ダウンロードの一覧に「一般的にダウンロードされていないファイルです」などと出た場合は、その項目のメニューから **「保存」**（または「危険性を確認したうえで保存」）を選びます。
 
-<!-- 画像：docs/images/chrome-download-warning.png（Chrome のダウンロード警告と「保存」の位置） -->
-
 #### 「Windows によって PC が保護されました」と出たとき
 
 1. 青い画面の **「詳細情報」** を押す
 
-   <!-- 画像：docs/images/smartscreen-1.png（「Windows によって PC が保護されました」と「詳細情報」） -->
+   <img src="docs/images/smartscreen-1.png" alt="「Windows によって PC が保護されました」の画面。左側の「詳細情報」を押す" width="400">
 
 2. 表示された **「実行」** を押す
 
-   <!-- 画像：docs/images/smartscreen-2.png（発行元「不明な発行元」と「実行」ボタン） -->
+   <img src="docs/images/smartscreen-2.png" alt="「詳細情報」を押した後の画面。アプリ DriveOpenerSetup.exe、発行元「不明な発行元」と表示され、「実行」ボタンが出る" width="400">
 
 ## アンインストール
 
