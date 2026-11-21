@@ -1,0 +1,89 @@
+# ホストの exe とインストーラーを GitHub のランナー（Windows）で自動ビルドする。
+# - タグ host-v<版>（例 host-v1.0.0）を push すると、ビルドしてリリースの「下書き」に添付する
+#   （公開は GitHub の画面で下書きを確認してから行う）
+# - Actions の画面から手動実行（workflow_dispatch）すると、ビルドして成果物（artifact）だけを残す
+# コード署名を入れるときは、下の「（署名する場合）」の位置に署名の工程を足す
+name: build-host
+
+on:
+  push:
+    tags: ['host-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write   # リリースの下書きを作るため
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: ツールの導入（PyInstaller・Inno Setup）
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller
+          choco install innosetup --no-progress -y
+
+      - name: テスト
+        shell: pwsh
+        run: python -m unittest discover -s tests -v
+
+      - name: バージョンの確認（タグと host/drive_opener.py の VERSION が同じか）
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path host/drive_opener.py -Pattern '^VERSION = "([0-9.]+)"').Matches[0].Groups[1].Value
+          "version=$v" >> $env:GITHUB_OUTPUT
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "host-v$v") {
+            throw "タグ $env:GITHUB_REF_NAME と VERSION ($v) が合っていません（host-v$v にしてください）"
+          }
+
+      - name: ビルド（exe とインストーラー）
+        shell: pwsh
+        run: ./build.ps1
+
+      # （署名する場合）ここで、ビルドした exe とインストーラーに署名し、署名済みのファイルに置き換える
+
+      - name: リリース用のファイルを用意（版なしの名前と SHA-256）
+        shell: pwsh
+        run: |
+          $v = '${{ steps.ver.outputs.version }}'
+          Copy-Item "dist/DriveOpenerSetup-$v.exe" "dist/DriveOpenerSetup.exe"
+          Get-FileHash "dist/DriveOpenerSetup-$v.exe", "dist/DriveOpenerSetup.exe" -Algorithm SHA256 |
+            ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path $_.Path -Leaf)" } |
+            Set-Content -Encoding ascii dist/SHA256SUMS.txt
+          Get-Content dist/SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: DriveOpenerSetup-${{ steps.ver.outputs.version }}
+          path: |
+            dist/DriveOpenerSetup-${{ steps.ver.outputs.version }}.exe
+            dist/DriveOpenerSetup.exe
+            dist/SHA256SUMS.txt
+
+      - name: リリースの下書きを作る（タグのときだけ）
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = '${{ steps.ver.outputs.version }}'
+          $notes = @"
+          Drive Opener ホスト $v のインストーラーです。
+
+          - ``DriveOpenerSetup.exe``：いつも最新版を指すファイル名（中身は ``DriveOpenerSetup-$v.exe`` と同じ）
+          - ``SHA256SUMS.txt``：ファイルの SHA-256
+
+          インストール方法と、Windows の警告が出たときの進め方は README を見てください。
+          このインストーラーにはコード署名がありません。
+          "@
+          gh release create "$env:GITHUB_REF_NAME" `
+            "dist/DriveOpenerSetup-$v.exe" "dist/DriveOpenerSetup.exe" "dist/SHA256SUMS.txt" `
+            --draft --title "Drive Opener ホスト $v" --notes $notes
