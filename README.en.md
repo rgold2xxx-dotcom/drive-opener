@@ -4,7 +4,7 @@
 
 The program on your computer (the **host app**) for the Chrome extension "Drive Opener", which **opens the Google Drive folder or file you are viewing in Chrome directly in Windows File Explorer, with one click**.
 
-- The extension will be distributed on the Chrome Web Store (coming soon; it is not included in this repository)
+- The extension is available on the **[Chrome Web Store](https://chromewebstore.google.com/detail/drive-opener/jfenpmokalgefflebomdkoohmhfilpic)** (it is not included in this repository)
 - This repository contains the host app, which the extension calls to open File Explorer, and its installer
 
 ## Requirements
@@ -12,7 +12,7 @@ The program on your computer (the **host app**) for the Chrome extension "Drive 
 - Windows 10 / 11 (64-bit)
 - Google Chrome
 - [Google Drive for desktop](https://www.google.com/drive/download/), installed and signed in
-- The Chrome extension "Drive Opener"
+- The Chrome extension "[Drive Opener](https://chromewebstore.google.com/detail/drive-opener/jfenpmokalgefflebomdkoohmhfilpic)"
 
 ## Download
 
@@ -22,10 +22,13 @@ Older versions and SHA-256 checksums are on the [releases page](../../releases).
 
 ## Install
 
-1. Download `DriveOpenerSetup.exe` from the link above
-2. Open the downloaded file (double-click it)
-3. Follow the steps on the screen (**no administrator rights needed**)
-4. In Chrome, open the Drive Opener options page and click "Check again". When it says "Installed", you are done
+1. **Add the extension**: open [Drive Opener](https://chromewebstore.google.com/detail/drive-opener/jfenpmokalgefflebomdkoohmhfilpic) on the Chrome Web Store and click "Add to Chrome"
+   - Because the host app is not installed yet, the extension's options page opens automatically and shows how to install it
+2. **Install the host app**:
+   1. Download `DriveOpenerSetup.exe` from the "Download" link above (or with the button on the extension's options page)
+   2. Open the downloaded file (double-click it)
+   3. Follow the steps on the screen (**no administrator rights needed**)
+3. **Check**: on the extension's options page, click "Check again". When it says "Installed", you are done
    - If it is not detected, close all Chrome windows, open Chrome again, and click "Check again"
 
 ### If Windows shows a warning

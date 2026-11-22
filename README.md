@@ -4,7 +4,7 @@
 
 Web版の Google ドライブで開いているフォルダやファイルを、**Windows のエクスプローラーでワンクリックで開く** Chrome 拡張「Drive Opener」のための、パソコン側のプログラム（ホスト）です。
 
-- 拡張は Chrome ウェブストアで配布します（準備中。このリポジトリには含みません）
+- 拡張は **[Chrome ウェブストア](https://chromewebstore.google.com/detail/drive-opener/jfenpmokalgefflebomdkoohmhfilpic)** で配布しています（このリポジトリには含みません）
 - このリポジトリは、拡張から呼ばれてエクスプローラーを開くホストと、そのインストーラーです
 
 ## 必要なもの
@@ -12,7 +12,7 @@ Web版の Google ドライブで開いているフォルダやファイルを、
 - Windows 10 / 11（64ビット）
 - Google Chrome
 - [パソコン版ドライブ（Google Drive for desktop）](https://www.google.com/drive/download/)：インストールしてログインしておく
-- Chrome 拡張「Drive Opener」
+- Chrome 拡張「[Drive Opener](https://chromewebstore.google.com/detail/drive-opener/jfenpmokalgefflebomdkoohmhfilpic)」
 
 ## ダウンロード
 
@@ -22,10 +22,13 @@ Web版の Google ドライブで開いているフォルダやファイルを、
 
 ## インストール
 
-1. 上のリンクから `DriveOpenerSetup.exe` をダウンロードする
-2. ダウンロードしたファイルを開く（ダブルクリック）
-3. 画面の案内に従って進める（**管理者権限は不要**です）
-4. Chrome で Drive Opener の設定画面を開き、「再確認」を押す →「導入済み」になれば完了
+1. **拡張を追加する**：Chrome ウェブストアの [Drive Opener](https://chromewebstore.google.com/detail/drive-opener/jfenpmokalgefflebomdkoohmhfilpic) を開き、「Chrome に追加」を押す
+   - ホストがまだ入っていないので、拡張の設定画面が自動で開き、ホストの入れ方を案内します
+2. **ホストをインストールする**：
+   1. 上の「ダウンロード」のリンク（または拡張の設定画面のボタン）から `DriveOpenerSetup.exe` をダウンロードする
+   2. ダウンロードしたファイルを開く（ダブルクリック）
+   3. 画面の案内に従って進める（**管理者権限は不要**です）
+3. **確かめる**：拡張の設定画面で「再確認」を押す →「導入済み」になれば完了
    - 認識されないときは、Chrome のウィンドウをすべて閉じてから開き直し、もう一度「再確認」を押してください
 
 ### Windows の警告が出たとき
