@@ -1,5 +1,7 @@
 # Drive Opener（ホスト）
 
+日本語 | [English](README.en.md)
+
 Web版の Google ドライブで開いているフォルダやファイルを、**Windows のエクスプローラーでワンクリックで開く** Chrome 拡張「Drive Opener」のための、パソコン側のプログラム（ホスト）です。
 
 - 拡張は Chrome ウェブストアで配布します（準備中。このリポジトリには含みません）
@@ -81,6 +83,8 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
 出力：`dist\drive_opener\`（ホスト本体）と `dist\DriveOpenerSetup-<版>.exe`（インストーラー）
+
+インストーラーは英語・日本語の2言語で、Windows の表示言語で自動的に選びます。言語を指定して確かめるときは `/LANG=english` か `/LANG=japanese` を付けて起動します。
 
 ### テスト
 

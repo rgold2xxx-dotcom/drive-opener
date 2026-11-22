@@ -204,5 +204,51 @@ class ResolveTest(unittest.TestCase):
         self.assertEqual(r["code"], "DB_FORMAT")
 
 
+class OtherLanguageFolderTest(unittest.TestCase):
+    """「共有ドライブ」「その他のパソコン」が日本語・英語以外の名前（例：ドイツ語の Windows）でも見つける"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.mount = os.path.join(self.tmp.name, "G")
+        self.db = os.path.join(self.tmp.name, "metadata_sqlite_db")
+        make_db(self.db)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def call(self, id_):
+        return h.handle(
+            {"type": "resolve", "id": id_},
+            mounts_fn=lambda: [{"path": self.mount, "label": "Google Drive"}],
+            dbs=[self.db],
+        )
+
+    def rel(self, r):
+        return os.path.relpath(r["path"], self.mount)
+
+    def test_discovered_containers(self):
+        make_tree(self.mount, [
+            "マイドライブ/2026/",
+            "Geteilte Ablagen/営業部/2026/",
+            "Andere Computer/My Laptop/Documents/",
+            ".shortcut-targets-by-id/",
+        ])
+        self.assertEqual(self.rel(self.call("1TeamSubxxxxxxx")), os.path.join("Geteilte Ablagen", "営業部", "2026"))
+        self.assertEqual(self.rel(self.call("1PCSubxxxxxxxxx")), os.path.join("Andere Computer", "My Laptop", "Documents"))
+
+    def test_my_drive_is_not_a_container(self):
+        # マイドライブの中に同じ名前のフォルダがあっても、そちらを開かない
+        make_tree(self.mount, ["マイドライブ/My Laptop/Documents/"])
+        r = self.call("1PCSubxxxxxxxxx")
+        self.assertFalse(r["ok"])
+        self.assertNotEqual(r.get("path") and self.rel(r), os.path.join("マイドライブ", "My Laptop", "Documents"))
+
+    def test_discover_skips_hidden_and_my_drive(self):
+        make_tree(self.mount, ["マイドライブ/", "My Drive/", ".Encrypted/", "$RECYCLE.BIN/", "Andere Computer/", "Geteilte Ablagen/"])
+        open(os.path.join(self.mount, "desktop.ini"), "w").close()
+        found = h.discover_containers(self.mount, {"マイドライブ", "My Drive"})
+        self.assertEqual(found, ["Andere Computer", "Geteilte Ablagen"])
+
+
 if __name__ == "__main__":
     unittest.main()

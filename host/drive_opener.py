@@ -25,7 +25,7 @@ from typing import Callable
 
 import drivefs
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 MAX_MESSAGE = 1024 * 1024
 MAX_NAME = 1024
 DRIVE_LABEL = "Google Drive"
@@ -220,13 +220,30 @@ def locate(mount: str, parts: list[str], last_is_folder: bool, listdir=os.listdi
     return cur, len(parts), True
 
 
+def discover_containers(mount: str, exclude, listdir=os.listdir) -> list[str]:
+    """マウント先の直下のフォルダのうち、マイドライブ・隠しフォルダ（「.」「$」で始まる）以外。
+    「共有ドライブ」「その他のパソコン」に当たるフォルダを、名前に頼らず候補にするため"""
+    try:
+        entries = listdir(mount)
+    except OSError:
+        return []
+    skip = {e for e in exclude if e}
+    out = []
+    for e in sorted(entries):
+        if e.startswith((".", "$")) or e in skip or not is_plain_component(e):
+            continue
+        if os.path.isdir(os.path.join(mount, e)):
+            out.append(e)
+    return out
+
+
 def resolve_id(cloud_id, *, mounts_fn=None, dbs=None, listdir=os.listdir) -> dict:
     """ID → { ok, path, select(bool), partial } またはエラー"""
     if not isinstance(cloud_id, str) or not ID_RE.match(cloud_id):
         raise BadRequest("id: invalid")
     try:
         lk = drivefs.find(cloud_id, dbs)
-        cands = drivefs.candidates(lk)
+        drivefs.candidates(lk)  # ゴミ箱などのエラーを先に出す
     except drivefs.DriveFSError as e:
         return {"ok": False, "code": e.code, "detail": str(e) if str(e) != e.code else "", "path": None}
 
@@ -237,7 +254,8 @@ def resolve_id(cloud_id, *, mounts_fn=None, dbs=None, listdir=os.listdir) -> dic
     is_folder = lk.item.is_folder
     best = None  # (mount, path, depth, complete, n_parts)
     for mount in mounts:
-        for parts in cands:
+        containers = discover_containers(mount, {lk.root_title, *drivefs.MY_DRIVE_NAMES}, listdir=listdir)
+        for parts in drivefs.candidates(lk, containers):
             path, depth, complete = locate(mount, parts, is_folder, listdir=listdir)
             if best is None or depth > best[2] or (complete and not best[3]):
                 best = (mount, path, depth, complete, len(parts))

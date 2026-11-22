@@ -46,6 +46,7 @@ class Lookup:
     root_id: str
     chain: list[Item]  # 最上位 → 対象 の順
     shortcut_targets: set[int]
+    root_title: str = ""  # マイドライブのローカルでのフォルダ名（例「マイドライブ」「My Drive」）
 
     @property
     def item(self) -> Item:
@@ -117,7 +118,8 @@ def lookup(db: str, cloud_id: str) -> Lookup | None:
             chain.insert(0, parent)
 
         targets = {r[0] for r in con.execute("select target_stable_id from shortcut_details")}
-        return Lookup(db, root_id, chain, targets)
+        root_row = con.execute("select local_title from items where id=?", (root_id,)).fetchone() if root_id else None
+        return Lookup(db, root_id, chain, targets, _text(root_row[0]) if root_row else "")
     except sqlite3.Error as e:
         raise DriveFSError("DB_FORMAT", str(e)) from e
     finally:
@@ -143,8 +145,13 @@ def find(cloud_id: str, dbs: list[str] | None = None) -> Lookup:
     raise DriveFSError("NOT_IN_DB")
 
 
-def candidates(lk: Lookup) -> list[list[str]]:
-    """マウント先からの相対パス（名前の配列）の候補。先に書いたものほど優先。"""
+def candidates(lk: Lookup, containers: list[str] | tuple[str, ...] = ()) -> list[list[str]]:
+    """マウント先からの相対パス（名前の配列）の候補。先に書いたものほど優先。
+
+    containers: マウント先の直下で見つけたフォルダ（マイドライブ・隠しフォルダ以外）。
+    「共有ドライブ」「その他のパソコン」の名前は Windows の表示言語で変わるため、
+    日本語・英語の決め打ちの名前で見つからないときに、これらの中を探す。
+    """
     if any(x.trashed for x in lk.chain):
         raise DriveFSError("TRASHED")
     chain = lk.chain
@@ -160,6 +167,7 @@ def candidates(lk: Lookup) -> list[list[str]]:
 
     if any(x.team_drive for x in chain):
         out += [[sd] + names for sd in SHARED_DRIVES_NAMES]
+        out += [[c] + names for c in containers if c not in SHARED_DRIVES_NAMES]
 
     # 共有アイテムをショートカットでマイドライブに追加したもの
     for i, x in enumerate(chain):
@@ -168,6 +176,7 @@ def candidates(lk: Lookup) -> list[list[str]]:
 
     # 他のパソコンのバックアップ
     out += [[c] + names for c in COMPUTERS_NAMES]
+    out += [[c] + names for c in containers if c not in COMPUTERS_NAMES and c not in SHARED_DRIVES_NAMES]
 
     if not out:
         raise DriveFSError("SHARED_ITEM")
