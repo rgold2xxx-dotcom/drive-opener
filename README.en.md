@@ -40,13 +40,13 @@ If the download list says something like "this file isn't commonly downloaded", 
 
 1. On the blue screen, click **"More info"**
 
-   <img src="docs/images/smartscreen-1.png" alt="The &quot;Windows protected your PC&quot; screen (Japanese Windows). Click &quot;More info&quot; on the left." width="400">
+   <img src="docs/images/smartscreen-1-en.png" alt="Illustration of the &quot;Windows protected your PC&quot; screen. Click &quot;More info&quot; below the message." width="400">
 
 2. Click **"Run anyway"**
 
-   <img src="docs/images/smartscreen-2.png" alt="The screen after clicking &quot;More info&quot; (Japanese Windows). App: DriveOpenerSetup.exe, Publisher: Unknown publisher, with a &quot;Run anyway&quot; button." width="400">
+   <img src="docs/images/smartscreen-2-en.png" alt="Illustration of the screen after clicking &quot;More info&quot;. App: DriveOpenerSetup.exe, Publisher: Unknown publisher, with &quot;Run anyway&quot; and &quot;Don&#39;t run&quot; buttons." width="400">
 
-   The screenshots are from Japanese Windows. On English Windows, the link is "More info" and the button is "Run anyway".
+   These images are illustrations of the English screen. The actual screen may look slightly different depending on your version of Windows.
 
 ## Uninstall
 
