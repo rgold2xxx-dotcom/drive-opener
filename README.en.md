@@ -96,10 +96,12 @@ python -m unittest discover -s tests
 
 ### Release
 
-1. Bump `VERSION` in `host/drive_opener.py` and commit
-2. Push a tag `host-v<version>` (for example `host-v1.0.0`)
-3. GitHub Actions builds it and attaches the installer (versioned and `DriveOpenerSetup.exe`) and `SHA256SUMS.txt` to a **draft** release
+1. Bump `VERSION` in `host/drive_opener.py`, write the changes in English and Japanese in `release-notes/<version>.md` (English first; see `release-notes/1.1.0.md`), and commit
+2. Push a tag `host-v<version>` (for example `host-v1.2.0`)
+3. GitHub Actions builds it and attaches the installer (versioned and `DriveOpenerSetup.exe`) and `SHA256SUMS.txt` to a **draft** release. The release notes are the changes plus common text (files, README links, not code-signed) in English and Japanese (`tools/make_release_notes.py`). The build stops if `release-notes/<version>.md` is missing
 4. Review the draft, then publish it
+
+To check the release notes without pushing a tag, run the "build-host" workflow manually from the Actions tab (the notes appear in the log and the run summary; no draft is created)
 
 ## License
 

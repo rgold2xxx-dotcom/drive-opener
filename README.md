@@ -94,10 +94,12 @@ python -m unittest discover -s tests
 
 ### リリース
 
-1. `host/drive_opener.py` の `VERSION` を上げてコミットする
-2. タグ `host-v<版>`（例 `host-v1.0.0`）を付けて push する
-3. GitHub Actions がビルドし、リリースの**下書き**にインストーラー（版付きと `DriveOpenerSetup.exe`）と `SHA256SUMS.txt` を添付する
+1. `host/drive_opener.py` の `VERSION` を上げ、`release-notes/<版>.md` に変更点を英語・日本語で書いて（英語が先。書き方は `release-notes/1.1.0.md` を参照）コミットする
+2. タグ `host-v<版>`（例 `host-v1.2.0`）を付けて push する
+3. GitHub Actions がビルドし、リリースの**下書き**にインストーラー（版付きと `DriveOpenerSetup.exe`）と `SHA256SUMS.txt` を添付する。説明文は変更点に共通の文（ファイルの説明・README へのリンク・コード署名なし）を英語・日本語で付けたもの（`tools/make_release_notes.py`）。`release-notes/<版>.md` がないとエラーで止まる
 4. 下書きの中身を確認してから公開する
+
+タグを打たずに説明文を確かめるときは、GitHub の Actions の画面から「build-host」を手動実行する（説明文がログと実行結果の概要に出る。下書きは作らない）
 
 ## ライセンス
 

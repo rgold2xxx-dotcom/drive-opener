@@ -2,6 +2,9 @@
 # - タグ host-v<版>（例 host-v1.0.0）を push すると、ビルドしてリリースの「下書き」に添付する
 #   （公開は GitHub の画面で下書きを確認してから行う）
 # - Actions の画面から手動実行（workflow_dispatch）すると、ビルドして成果物（artifact）だけを残す
+# - リリースの説明文は release-notes/<版>.md（変更点。英語→日本語の順）に、共通の文を英語・日本語で付けて作る
+#   （tools/make_release_notes.py）。手動実行でも組み立てて、ログとジョブの概要（Summary）に出す（下書きは作らない）
+#   タグのときに release-notes/<版>.md がなければエラーで止める。手動実行のときは警告だけ
 # コード署名を入れるときは、下の「（署名する場合）」の位置に署名の工程を足す
 name: build-host
 
@@ -44,6 +47,21 @@ jobs:
             throw "タグ $env:GITHUB_REF_NAME と VERSION ($v) が合っていません（host-v$v にしてください）"
           }
 
+      - name: リリースの説明文を組み立てる（英語・日本語）
+        shell: pwsh
+        run: |
+          $v = '${{ steps.ver.outputs.version }}'
+          $out = Join-Path $env:RUNNER_TEMP 'RELEASE_NOTES.md'
+          $require = @()
+          if ($env:GITHUB_REF_TYPE -eq 'tag') { $require = @('--require') }
+          python tools/make_release_notes.py --version $v --out $out @require
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Host "----- タイトル: Drive Opener host app $v / ホスト $v -----"
+          Get-Content $out -Encoding utf8
+          "## リリースの説明文（$v）`n" | Out-File $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          "タイトル: **Drive Opener host app $v / ホスト $v**`n`n---`n" | Out-File $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          Get-Content $out -Encoding utf8 | Out-File $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+
       - name: ビルド（exe とインストーラー）
         shell: pwsh
         run: ./build.ps1
@@ -75,15 +93,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $v = '${{ steps.ver.outputs.version }}'
-          $notes = @"
-          Drive Opener ホスト $v のインストーラーです。
-
-          - ``DriveOpenerSetup.exe``：いつも最新版を指すファイル名（中身は ``DriveOpenerSetup-$v.exe`` と同じ）
-          - ``SHA256SUMS.txt``：ファイルの SHA-256
-
-          インストール方法と、Windows の警告が出たときの進め方は README を見てください。
-          このインストーラーにはコード署名がありません。
-          "@
           gh release create "$env:GITHUB_REF_NAME" `
             "dist/DriveOpenerSetup-$v.exe" "dist/DriveOpenerSetup.exe" "dist/SHA256SUMS.txt" `
-            --draft --title "Drive Opener ホスト $v" --notes $notes
+            --draft --title "Drive Opener host app $v / ホスト $v" `
+            --notes-file (Join-Path $env:RUNNER_TEMP 'RELEASE_NOTES.md')
