@@ -12,8 +12,10 @@
 #endif
 #define AppName "Drive Opener"
 #define HostName "com.rgold.drive_opener"
-; ホストを呼べる拡張のID（ストア登録後はストア版のIDもここに足す。カンマ区切りで "chrome-extension://<ID>/" を並べる）
-#define AllowedOrigins '"chrome-extension://ljnhnecldkgkeoahiiaccikkklljecmf/"'
+; ホストを呼べる拡張のID（カンマ区切りで "chrome-extension://<ID>/" を並べる）
+;   jfenpmokalgefflebomdkoohmhfilpic … Chrome ウェブストア版（1.1.1 から）
+;   ljnhnecldkgkeoahiiaccikkklljecmf … 以前の開発版
+#define AllowedOrigins '"chrome-extension://jfenpmokalgefflebomdkoohmhfilpic/", "chrome-extension://ljnhnecldkgkeoahiiaccikkklljecmf/"'
 
 [Setup]
 AppId={{6E0C3B8E-2F4A-4C7B-9D61-8A3F5E2B7C10}

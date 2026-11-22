@@ -25,7 +25,7 @@ from typing import Callable
 
 import drivefs
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 MAX_MESSAGE = 1024 * 1024
 MAX_NAME = 1024
 DRIVE_LABEL = "Google Drive"
