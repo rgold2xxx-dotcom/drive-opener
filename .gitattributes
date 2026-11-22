@@ -1,0 +1,20 @@
+# 改行コードの扱い（Windows で編集しても差分が出ないようにする）
+# リポジトリの中は LF にそろえ、取り出すときの改行は種類ごとに決める
+
+# 既定：テキストは自動判定。リポジトリ内は LF、取り出し時は各環境の標準
+* text=auto
+
+# Windows のツールが読むファイルは、取り出し時に CRLF にする
+*.ps1 text eol=crlf
+*.iss text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# GitHub Actions の設定など、LF のままがよいもの
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# バイナリ（改行の変換をしない）
+*.png binary
+*.ico binary
+*.exe binary
