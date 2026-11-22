@@ -58,6 +58,8 @@ In Windows, open **Settings → Apps → Installed apps**, select **"Drive Opene
 - To find where a folder is on your computer, it reads the local database that Google Drive for desktop keeps on your computer (`%LOCALAPPDATA%\Google\DriveFS\…\metadata_sqlite_db`) in **read-only** mode. It never changes it
 - All it does is look up the folder for the ID it receives from the extension and open it in File Explorer
 
+For details on both the extension and the host app, see the [Privacy Policy](PRIVACY.en.md).
+
 ## How it works
 
 ```
