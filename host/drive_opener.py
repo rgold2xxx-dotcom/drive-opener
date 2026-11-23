@@ -24,14 +24,16 @@ import unicodedata
 from typing import Callable
 
 import drivefs
+import shortcut
 
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 MAX_MESSAGE = 1024 * 1024
 MAX_NAME = 1024
 DRIVE_LABEL = "Google Drive"
 
 ID_RE = re.compile(r"^(root|[A-Za-z0-9_-]{10,200})$")
 INVALID_CHARS = re.compile(r'[\\/:*?"<>|\x00-\x1f]')
+LOCAL_PATH = re.compile(r"^[A-Za-z]:\\")
 DRIVE_SPEC = re.compile(r"^[A-Za-z]:")
 DUP_SUFFIX = re.compile(r"^(?P<base>.*?) \((?P<n>\d+)\)(?P<ext>\.[^.]*)?$")
 
@@ -237,7 +239,25 @@ def discover_containers(mount: str, exclude, listdir=os.listdir) -> list[str]:
     return out
 
 
-def resolve_id(cloud_id, *, mounts_fn=None, dbs=None, listdir=os.listdir) -> dict:
+def mirrored_my_drive(mount: str, root_title: str, read_target=None) -> str | None:
+    """ミラーリングのときのマイドライブの実際の場所。
+
+    ミラーリングでは、マウント先の直下にマイドライブのフォルダがなく「マイドライブ.lnk」だけが置かれる。
+    """
+    for name in dict.fromkeys((root_title, *drivefs.MY_DRIVE_NAMES)):
+        if not name or not is_plain_component(name):
+            continue
+        lnk = os.path.join(mount, name + ".lnk")
+        if not os.path.isfile(lnk):
+            continue
+        target = (read_target or shortcut.read_target)(lnk)
+        # ドライブ文字で始まる実在のフォルダだけ（ネットワークの場所は使わない）
+        if target and LOCAL_PATH.match(target) and os.path.isdir(target):
+            return target
+    return None
+
+
+def resolve_id(cloud_id, *, mounts_fn=None, dbs=None, listdir=os.listdir, read_target=None) -> dict:
     """ID → { ok, path, select(bool), partial } またはエラー"""
     if not isinstance(cloud_id, str) or not ID_RE.match(cloud_id):
         raise BadRequest("id: invalid")
@@ -263,6 +283,15 @@ def resolve_id(cloud_id, *, mounts_fn=None, dbs=None, listdir=os.listdir) -> dic
                 break
         if best and best[3]:
             break
+        if best[2] == 0 and lk.chain[0].id == lk.root_id:
+            # ミラーリング：マイドライブの実際の場所（ショートカットの先）からたどる
+            base = mirrored_my_drive(mount, lk.root_title, read_target)
+            if base:
+                rest = [x.title for x in lk.chain[1:]]
+                path, depth, complete = locate(base, rest, is_folder, listdir=listdir)
+                best = (base, path, depth + 1, complete, len(rest) + 1)
+                if complete:
+                    break
 
     mount, path, depth, complete, _ = best
     if not complete and depth <= 1 and drivefs.is_shared_only(lk):
@@ -289,7 +318,7 @@ def open_in_explorer(path: str, select: bool) -> None:
 # ---------------------------------------------------------------- メイン
 
 
-def handle(msg: dict, *, opener=None, mounts_fn=None, dbs=None, listdir=os.listdir) -> dict:
+def handle(msg: dict, *, opener=None, mounts_fn=None, dbs=None, listdir=os.listdir, read_target=None) -> dict:
     t = msg.get("type")
     if t == "ping":
         return {
@@ -299,7 +328,7 @@ def handle(msg: dict, *, opener=None, mounts_fn=None, dbs=None, listdir=os.listd
             "accounts": len(drivefs.find_databases() if dbs is None else dbs),
         }
     if t in ("open", "resolve"):
-        r = resolve_id(msg.get("id"), mounts_fn=mounts_fn, dbs=dbs, listdir=listdir)
+        r = resolve_id(msg.get("id"), mounts_fn=mounts_fn, dbs=dbs, listdir=listdir, read_target=read_target)
         if t == "open" and r.get("path"):
             (opener or open_in_explorer)(r["path"], bool(r.get("select")))
         out = {k: v for k, v in r.items() if v is not None and k != "select"}

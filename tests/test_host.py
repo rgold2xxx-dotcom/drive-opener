@@ -4,6 +4,7 @@ import io
 import os
 import sqlite3
 import struct
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -11,6 +12,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "host"))
 import drive_opener as h  # noqa: E402
 import drivefs  # noqa: E402
+import shortcut  # noqa: E402
 
 
 def make_tree(base, paths):
@@ -248,6 +250,82 @@ class OtherLanguageFolderTest(unittest.TestCase):
         open(os.path.join(self.mount, "desktop.ini"), "w").close()
         found = h.discover_containers(self.mount, {"マイドライブ", "My Drive"})
         self.assertEqual(found, ["Andere Computer", "Geteilte Ablagen"])
+
+
+@unittest.skipUnless(os.name == "nt", "Windows のみ")
+class MirrorTest(unittest.TestCase):
+    """ミラーリング：マウント先には「マイドライブ.lnk」だけがあり、実体は別の場所にある"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.mount = os.path.join(self.tmp.name, "G")
+        self.mirror = os.path.join(self.tmp.name, "mirror")
+        make_tree(self.mount, ["マイドライブ.lnk", "共有ドライブ/営業部/2026/", "その他のパソコン/", ".shortcut-targets-by-id/"])
+        make_tree(self.mirror, ["2026/見積/見積書.xlsx"])
+        self.db = os.path.join(self.tmp.name, "metadata_sqlite_db")
+        make_db(self.db)
+        self.target = self.mirror
+        self.opened = []
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def call(self, type_, id_):
+        return h.handle(
+            {"type": type_, "id": id_},
+            mounts_fn=lambda: [{"path": self.mount, "label": "Google Drive"}],
+            dbs=[self.db],
+            opener=lambda p, sel: self.opened.append((p, sel)),
+            read_target=lambda lnk: self.target,
+        )
+
+    def test_root(self):
+        r = self.call("open", "root")
+        self.assertTrue(r["ok"], r)
+        self.assertEqual(self.opened, [(self.mirror, False)])
+
+    def test_folder_and_file(self):
+        r = self.call("resolve", "1Mitsumorixxxxx")
+        self.assertEqual((r["ok"], r["path"]), (True, os.path.join(self.mirror, "2026", "見積")))
+        self.call("open", "1FileXlsxxxxxxx")
+        self.assertEqual(self.opened, [(os.path.join(self.mirror, "2026", "見積", "見積書.xlsx"), True)])
+
+    def test_partial(self):
+        r = self.call("open", "1NotSyncedxxxxx")
+        self.assertEqual((r["ok"], r["code"]), (False, "NOT_FOUND"))
+        self.assertEqual(self.opened, [(os.path.join(self.mirror, "2026"), False)])
+
+    def test_shared_drive_still_works(self):
+        r = self.call("resolve", "1TeamSubxxxxxxx")
+        self.assertEqual((r["ok"], r["path"]), (True, os.path.join(self.mount, "共有ドライブ", "営業部", "2026")))
+
+    def test_bad_targets_are_not_opened(self):
+        for bad in (None, "", "relative", r"\\server\share", os.path.join(self.tmp.name, "missing"), self.db):
+            self.target = bad
+            r = self.call("open", "root")
+            self.assertEqual((r["ok"], r["code"]), (False, "NOT_FOUND"), repr(bad))
+            self.assertNotIn("path", r)
+        self.assertEqual(self.opened, [])
+
+    def test_name_cannot_escape(self):
+        with self.assertRaises(h.BadRequest):
+            self.call("open", "1EvilNamexxxxxx")
+        self.assertEqual(self.opened, [])
+
+    def test_real_folder_wins(self):
+        make_tree(self.mount, ["マイドライブ/"])
+        self.assertEqual(self.call("resolve", "root")["path"], os.path.join(self.mount, "マイドライブ"))
+
+    def test_read_real_lnk(self):
+        lnk = os.path.join(self.tmp.name, "x.lnk")
+        script = "$s=(New-Object -ComObject WScript.Shell).CreateShortcut($env:T_LNK);$s.TargetPath=$env:T_DST;$s.Save()"
+        subprocess.run(
+            ["powershell", "-NoProfile", "-Command", script],
+            env={**os.environ, "T_LNK": lnk, "T_DST": self.mirror}, check=True, capture_output=True,
+        )
+        self.assertTrue(os.path.samefile(shortcut.read_target(lnk), self.mirror))
+        self.assertIsNone(shortcut.read_target(os.path.join(self.tmp.name, "none.lnk")))
+        self.assertIsNone(shortcut.read_target(self.db))
 
 
 if __name__ == "__main__":
