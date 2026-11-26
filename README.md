@@ -6,6 +6,7 @@ Web版の Google ドライブで開いているフォルダやファイルを、
 
 - 拡張は **[Chrome ウェブストア](https://chromewebstore.google.com/detail/drive-opener/jfenpmokalgefflebomdkoohmhfilpic)** で配布しています（このリポジトリには含みません）
 - このリポジトリは、拡張から呼ばれてエクスプローラーを開くホストと、そのインストーラーです
+- 紹介サイト：https://drive-opener.pages.dev
 
 ## 必要なもの
 
